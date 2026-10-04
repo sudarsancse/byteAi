@@ -1,0 +1,139 @@
+import { AnimatePresence, motion } from "motion/react";
+import { Crown, X } from "lucide-react";
+import { useSelector } from "react-redux";
+import createOrder from "../features/createOrder";
+import verifyPayment from "../features/verifyPayment";
+
+function BilingDrawer({ open, onClose }) {
+  const { userData } = useSelector((state) => state.user);
+
+  const handelUpgrade = async (plan) => {
+    try {
+      const data = await createOrder(plan);
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        amount: data?.order?.amount,
+        currency: data?.order?.currency,
+        name: "Byte Ai",
+        description: `${data?.plan?.name} Plan`,
+        order_id: data?.order?.id,
+        handler: async (res) => {
+          // console.log(res);
+
+          try {
+            const data = await verifyPayment(res);
+
+            console.log(data);
+          } catch (error) {
+            console.log(error);
+          }
+        },
+      };
+
+      const razorpay = new window.Razorpay(options);
+      razorpay.open();
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  return (
+    <AnimatePresence>
+      {open && (
+        <>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.5 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className=" fixed inset-0 bg-black z-40"
+          />
+          <motion.div
+            initial={{ x: "100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "100%" }}
+            transition={{ duration: 0.25 }}
+            className=" fixed right-0 top-0 z-50 h-screen w-[380px] bg-[#0f1117] border-l border-white/10 shadow-2xl flex flex-col"
+          >
+            {/* HEADING DIV */}
+            <div className=" flex items-center justify-between p-5 border-b border-white/10">
+              <div>
+                <div className=" text-white text-lg font-semibold">Biling</div>
+                <div className=" text-slate-400 text-sm">Plans & Credits</div>
+              </div>
+              <button
+                className=" w-9 h-9 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center"
+                onClick={onClose}
+              >
+                <X size={18} className=" text-slate-300" />
+              </button>
+            </div>
+
+            {/* CURRENT PALN */}
+            <div className=" p-5">
+              <div className=" rounded-xl bg-white/4 border border-white/10 p-4">
+                <div className=" flex justify-between items-center">
+                  <div>
+                    <p className=" text-slate-400 text-sm">Current Plan</p>
+                    <h3 className=" text-white text-xl font-bold first-letter:uppercase">
+                      {userData?.plan || "Free"}
+                    </h3>
+                  </div>
+                  <Crown className=" text-yellow-400" />
+                </div>
+
+                <div className=" mt-5">
+                  <div className=" flex justify-between mb-2 text-sm text-slate-400">
+                    <span className="">Credits</span>
+                    <span className="">
+                      {userData?.credits || 0} / {userData?.totalCredits || 100}
+                    </span>
+                  </div>
+
+                  <div className=" h-2 rounded-full bg-white/10 overflow-hidden">
+                    <div
+                      className=" h-full bg-indigo-500 transition-all duration-500"
+                      style={{
+                        width: `${((userData?.credits || 0) / (userData?.totalCredits || 1)) * 100}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* ALL PLANS */}
+
+            <div className=" px-5 flex-1 overflow-auto space-y-4">
+              <div className=" rounded-xl border border-white/10 p-4">
+                <h3 className=" text-white font-semibold">Starter Plan</h3>
+                <p className=" text-indigo-400 text-2xl font-bold mt-2">₹199</p>
+                <p className=" text-slate-400 text-sm mt-1">500 Credites</p>
+                <button
+                  onClick={() => handelUpgrade("starter")}
+                  className=" mt-4 w-full rounded-lg bg-indigo-400 hover:bg-indigo-700 py-2 text-white"
+                >
+                  Upgrade
+                </button>
+              </div>
+
+              <div className=" rounded-xl border border-white/10 p-4">
+                <h3 className=" text-white font-semibold">Pro Plan</h3>
+                <p className=" text-indigo-400 text-2xl font-bold mt-2">₹499</p>
+                <p className=" text-slate-400 text-sm mt-1">1000 Credites</p>
+                <button
+                  onClick={() => handelUpgrade("pro")}
+                  className=" mt-4 w-full rounded-lg bg-indigo-400 hover:bg-indigo-700 py-2 text-white"
+                >
+                  Upgrade
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+}
+
+export default BilingDrawer;
