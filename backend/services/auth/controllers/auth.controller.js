@@ -66,7 +66,12 @@ export const logOut = async (req, res) => {
     // ! Delete the data from redis (based on session Id)
     await redis.del(`session-${sessionID}`);
 
-    res.clearCookie("session");
+    res.clearCookie("session", {
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
     return res.status(200).json({ message: " Logout sucessfully" });
   } catch (error) {
     return res.status(500).json({ message: `logout error : ${error}` });

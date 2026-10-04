@@ -21,9 +21,7 @@ function BilingDrawer({ open, onClose }) {
           // console.log(res);
 
           try {
-            const data = await verifyPayment(res);
-
-            console.log(data);
+            await verifyPayment(res);
           } catch (error) {
             console.log(error);
           }

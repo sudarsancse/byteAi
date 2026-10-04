@@ -19,7 +19,6 @@ function App() {
     const getUser = async () => {
       try {
         const data = await getCurrentUser();
-        console.log(data);
 
         dispatch(setUserdata(data));
       } catch (error) {
