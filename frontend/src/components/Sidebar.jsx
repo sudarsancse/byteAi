@@ -68,7 +68,7 @@ function Sidebar() {
     return (
       <div className=" hidden lg:flex flex-col items-center w-14 h-screen bg-[#0d0f14] border-r border-white/6 py-4 gap-1 shrink-0">
         <button
-          onClick={() => setCollapsed(false)}
+          onClick={() => setCollapsed(true)}
           className=" flex items-center justify-center w-9 h-9 rounded-xl text-slate-500 border-none cursor-pointer mb-1"
         >
           <PanelRightIcon />
@@ -133,13 +133,10 @@ function Sidebar() {
 
       {mobileOpen && (
         <div
-          onClick={() => setMobileOpen(true)}
+          onClick={() => setMobileOpen(false)}
           className=" lg:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
         />
       )}
-      {/* <div
-        className={` fixed lg:static inset-y-0 left-0 z-50 w-67.5 h-screen shrink-0 bg-[#0d0f14] border-r border-white/5 transition-transform duration-250 ${mobileOpen ? "translate-x-0" : " -translate-x-full lg:translate-x-0"}`}
-      > */}
       <div
         className={`fixed lg:static inset-y-0 left-0 z-50 w-67.5 h-dvh lg:h-screen shrink-0 bg-[#0d0f14] border-r border-white/5 transition-transform duration-250 ${mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}
       >
@@ -221,9 +218,6 @@ function Sidebar() {
             })}
           </div>
 
-          {/* PROFILE */}
-          {/* <div className=" mx-2.5 h-px bg-white/60" />
-          <div className=" px-3.5 py-3.5"> */}
           {/* PROFILE */}
           <div className="mx-2.5 h-px bg-white/6 shrink-0" />
           <div className="shrink-0 px-3.5 pt-3.5 pb-[calc(0.875rem+env(safe-area-inset-bottom))]">
