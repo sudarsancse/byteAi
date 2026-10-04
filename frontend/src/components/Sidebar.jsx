@@ -137,8 +137,11 @@ function Sidebar() {
           className=" lg:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
         />
       )}
-      <div
+      {/* <div
         className={` fixed lg:static inset-y-0 left-0 z-50 w-67.5 h-screen shrink-0 bg-[#0d0f14] border-r border-white/5 transition-transform duration-250 ${mobileOpen ? "translate-x-0" : " -translate-x-full lg:translate-x-0"}`}
+      > */}
+      <div
+        className={`fixed lg:static inset-y-0 left-0 z-50 w-67.5 h-dvh lg:h-screen shrink-0 bg-[#0d0f14] border-r border-white/5 transition-transform duration-250 ${mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}
       >
         <div className=" flex flex-col h-full">
           {/*  HEADER */}
@@ -219,8 +222,11 @@ function Sidebar() {
           </div>
 
           {/* PROFILE */}
-          <div className=" mx-2.5 h-px bg-white/60" />
-          <div className=" px-3.5 py-3.5">
+          {/* <div className=" mx-2.5 h-px bg-white/60" />
+          <div className=" px-3.5 py-3.5"> */}
+          {/* PROFILE */}
+          <div className="mx-2.5 h-px bg-white/6 shrink-0" />
+          <div className="shrink-0 px-3.5 pt-3.5 pb-[calc(0.875rem+env(safe-area-inset-bottom))]">
             {userData ? (
               <div className=" flex items-center gap-2.5 cursor-pointer rounded-xl px-3 py-2.5 hover:bg-white/5 transition-colors duration-150">
                 <div className=" relative shrink-0">
