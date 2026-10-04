@@ -16,7 +16,7 @@ app.use(express.json());
 app.use("/", router);
 
 app.get("/", (req, res) => {
-  res.json({ message: "hello from Auth services" });
+  res.json({ message: "hello from Auth services v2" });
 });
 
 app.listen(PORT, () => {
