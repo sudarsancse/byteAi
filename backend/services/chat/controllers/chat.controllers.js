@@ -116,3 +116,39 @@ export const getAllMessage = async (req, res) => {
       .json({ message: `Get all message error : ${error}` });
   }
 };
+
+//! DELETE CONVERSATION & ALL MESSAGES CONTROLLER
+export const deleteConversation = async (req, res) => {
+  try {
+    const userId = req.headers["x-user-id"];
+    const { id } = req.params;
+
+    if (!id) {
+      return res.status(400).json({ message: "'id' is required" });
+    }
+
+    // only delete if the conversation belongs to this user
+    const conversation = await ConversationModel.findOneAndDelete({
+      _id: id,
+      userId: userId,
+    });
+
+    if (!conversation) {
+      return res.status(404).json({
+        message: `Conversation with id ${id} not found`,
+      });
+    }
+
+    // delete all messages of this conversation
+    await MessageModel.deleteMany({ conversationId: id });
+
+    return res.status(200).json({
+      message: "Conversation and its messages deleted successfully",
+      id,
+    });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: `Delete conversation error : ${error}` });
+  }
+};

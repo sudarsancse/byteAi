@@ -1,17 +1,20 @@
 import {
   Coins,
+  EllipsisVertical,
   LogOut,
   Menu,
   MessageSquare,
   PanelLeftIcon,
   PanelRightIcon,
+  Pencil,
   PenSquare,
   Plus,
+  Trash2,
   User,
   X,
 } from "lucide-react";
-import { useEffect } from "react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+
 import { getConversations } from "../features/chatApis";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -22,6 +25,8 @@ import { setMessages, setArtifacts } from "../redux/messages.Slice";
 import logOut from "../features/LogoutApi";
 import { setUserdata } from "../redux/userSlice";
 import BilingDrawer from "./BilingDrawer";
+import { updateConversation } from "../features/updateConversation";
+import { deleteConversation } from "../features/deleteConversation";
 
 function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
@@ -33,6 +38,10 @@ function Sidebar() {
   );
   const { userData } = useSelector((state) => state.user);
   const [showBiling, setShowBiling] = useState(false);
+  const [menuOpenId, setMenuOpenId] = useState(null); // which conversation's menu is open
+  const [renamingId, setRenamingId] = useState(null); // which conversation is being renamed
+  const [renameValue, setRenameValue] = useState("");
+  const menuRef = useRef(null);
 
   useEffect(() => {
     const getConv = async () => {
@@ -57,6 +66,62 @@ function Sidebar() {
     dispatch(SetSelectedConversation(conv));
   };
 
+  // close the dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setMenuOpenId(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleRename = (conv) => {
+    setMenuOpenId(null);
+    setRenamingId(conv._id);
+    setRenameValue(conv.title || "");
+  };
+
+  const submitRename = async (conv) => {
+    const title = renameValue.trim();
+    setRenamingId(null);
+    if (!title || title === conv.title) return;
+    // optimistic update so the UI changes instantly
+    const previous = conversations;
+
+    // TODO: rename API here, e.g. await renameConversation(conv._id, title);
+    // then update redux:
+    dispatch(
+      setConversations(
+        conversations.map((c) => (c._id === conv._id ? { ...c, title } : c)),
+      ),
+    );
+
+    const updated = await updateConversation({ id: conv._id, title });
+
+    // your API returns null on failure, so roll back
+    if (!updated) {
+      dispatch(setConversations(previous));
+    }
+  };
+
+  const handleDelete = async (conv) => {
+    setMenuOpenId(null);
+
+    // TODO:  delete API here, e.g. await deleteConversation(conv._id);
+    const result = await deleteConversation(conv._id);
+    if (!result) return; //
+
+    dispatch(setConversations(conversations.filter((c) => c._id !== conv._id)));
+
+    if (selectedConversation?._id === conv._id) {
+      dispatch(SetSelectedConversation(null));
+      dispatch(setMessages([]));
+      dispatch(setArtifacts([]));
+    }
+  };
+
   // for image error
   useEffect(() => {
     setImageError(false);
@@ -68,14 +133,14 @@ function Sidebar() {
     return (
       <div className=" hidden lg:flex flex-col items-center w-14 h-screen bg-[#0d0f14] border-r border-white/6 py-4 gap-1 shrink-0">
         <button
-          onClick={() => setCollapsed(true)}
+          onClick={() => setCollapsed(false)}
           className=" flex items-center justify-center w-9 h-9 rounded-xl text-slate-500 border-none cursor-pointer mb-1"
         >
           <PanelRightIcon />
         </button>
 
         <button
-          onClick={() => handleNewChat}
+          onClick={() => handleNewChat()}
           className=" flex items-center justify-center w-9 h-9 rounded-xl text-slate-500 hover:text-slate-200 hover:bg-white/5 transition-colors duration-150 bg-transparent border-none cursor-pointer"
         >
           <Plus size={17} />
@@ -196,23 +261,92 @@ function Sidebar() {
           <div className=" flex-1 overflow-y-auto px-2.5 pb2 scrollbar-none [&::-webkit-scrollbar]:hidden">
             {conversations.map((conv, i) => {
               const isActive = selectedConversation?._id == conv?._id;
+              const isMenuOpen = menuOpenId === conv._id;
+              const isRenaming = renamingId === conv._id;
 
               return (
                 <div
-                  key={i}
-                  onClick={() => dispatch(SetSelectedConversation(conv))}
-                  className={`flex items-center gap-2.5 cursor-pointer mb-0.5 px-3 py-2.5 rounded-[10px] border transition-colors duration-150 ${isActive ? " bg-indigo-500/10 border-indigo-500/18" : " bg-transparent border-transparent"}`}
+                  key={conv._id || i}
+                  onClick={() => !isRenaming && handleSelectConversation(conv)}
+                  className={`group relative flex items-center gap-2.5 cursor-pointer mb-0.5 px-3 py-2.5 rounded-[10px] border transition-colors duration-150 ${
+                    isActive
+                      ? " bg-indigo-500/10 border-indigo-500/18"
+                      : " bg-transparent border-transparent hover:bg-white/5"
+                  }`}
                 >
                   <div
-                    className={`flex items-center justify-center shrink-0 w-7 h-7 rounded-lg transition-colors duration-150 ${isActive ? " bg-indigo-500/15 text-indigo-400" : " bg-white/5 text-slate-500"}`}
+                    className={`flex items-center justify-center shrink-0 w-7 h-7 rounded-lg transition-colors duration-150 ${
+                      isActive
+                        ? " bg-indigo-500/15 text-indigo-400"
+                        : " bg-white/5 text-slate-500"
+                    }`}
                   >
                     <MessageSquare size={13} />
                   </div>
-                  <span
-                    className={`text-[13px] font-medium truncate ${isActive ? " text-slate-100" : " text-slate-300"}`}
-                  >
-                    {conv?.title || "New Chat"}
-                  </span>
+
+                  {isRenaming ? (
+                    <input
+                      autoFocus
+                      value={renameValue}
+                      onChange={(e) => setRenameValue(e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                      onBlur={() => submitRename(conv)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") submitRename(conv);
+                        if (e.key === "Escape") setRenamingId(null);
+                      }}
+                      className="flex-1 min-w-0 text-[13px] font-medium text-slate-100 bg-white/5 border border-indigo-500/30 rounded-md px-2 py-0.5 outline-none"
+                    />
+                  ) : (
+                    <span
+                      className={`flex-1 text-[13px] font-medium truncate ${
+                        isActive ? " text-slate-100" : " text-slate-300"
+                      }`}
+                    >
+                      {conv?.title || "New Chat"}
+                    </span>
+                  )}
+
+                  {/* ELLIPSIS BUTTON (visible on hover, or while menu is open) */}
+                  {!isRenaming && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setMenuOpenId(isMenuOpen ? null : conv._id);
+                      }}
+                      className={`shrink-0 flex items-center justify-center w-6 h-6 rounded-md text-slate-500 hover:text-slate-200 hover:bg-white/8 bg-transparent border-none cursor-pointer transition-opacity duration-150 ${
+                        isMenuOpen
+                          ? "opacity-100"
+                          : "opacity-0 group-hover:opacity-100"
+                      }`}
+                    >
+                      <EllipsisVertical size={15} />
+                    </button>
+                  )}
+
+                  {/* DROPDOWN MENU */}
+                  {isMenuOpen && (
+                    <div
+                      ref={menuRef}
+                      onClick={(e) => e.stopPropagation()}
+                      className="absolute right-2 top-full mt-1 z-50 w-36 py-1 rounded-xl bg-[#161922] border border-white/8 shadow-xl shadow-black/40"
+                    >
+                      <button
+                        onClick={() => handleRename(conv)}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-[13px] text-slate-300 hover:text-slate-100 hover:bg-white/5 bg-transparent border-none cursor-pointer transition-colors duration-150"
+                      >
+                        <Pencil size={14} />
+                        Rename
+                      </button>
+                      <button
+                        onClick={() => handleDelete(conv)}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-[13px] text-red-400 hover:text-red-300 hover:bg-red-500/10 bg-transparent border-none cursor-pointer transition-colors duration-150"
+                      >
+                        <Trash2 size={14} />
+                        Delete
+                      </button>
+                    </div>
+                  )}
                 </div>
               );
             })}
